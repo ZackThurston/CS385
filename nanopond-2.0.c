@@ -177,17 +177,17 @@
 /* Tunable parameters                                                      */
 /* ----------------------------------------------------------------------- */
 
-/* Tick length.  Simpler to think about frequencies in terms of ticks 
+/* Tick length.  Simpler to think about frequencies in terms of ticks
  * rather than numbers with lots of trailing zeros.*/
 #define TICK 10000ULL
 
 /* Iteration to stop at. Comment this out to run forever. */
-#define STOP_AT (10000 * TICK)
+#define STOP_AT (100000 * TICK)
 
 /* Frequency of comprehensive reports-- lower values will provide more
  * info while slowing down the simulation. Higher values will give less
  * frequent updates. */
-//#define REPORT_FREQUENCY (10 * TICK)
+//#define REPORT_FREQUENCY (1000 * TICK)
 
 /* SDL refresh frequency */
 #define SDL_REFRESH_FREQUENCY (10 * TICK)
@@ -198,7 +198,7 @@
  * semi-human-readable if you look at the big switch() statement
  * in the main loop to see what instruction is signified by each
  * four-bit value. */
-//#define DUMP_FREQUENCY (10000 * TICK)
+#define DUMP_FREQUENCY (1000 * TICK)
 
 /* Mutation rate -- range is from 0 (none) to 0xffffffff (all mutations!) */
 /* To get it from a float probability from 0.0 to 1.0, multiply it by
@@ -242,7 +242,7 @@
 
 /* ----------------------------------------------------------------------- */
 
-#include <inttypes.h>	
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -263,15 +263,15 @@
 
 /* A few very minor changes were made by me - Adam */
 
-/* 
+/*
    A C-program for MT19937, with initialization improved 2002/1/26.
    Coded by Takuji Nishimura and Makoto Matsumoto.
 
-   Before using, initialize the state by using init_genrand(seed)  
+   Before using, initialize the state by using init_genrand(seed)
    or init_by_array(init_key, key_length).
 
    Copyright (C) 1997 - 2002, Makoto Matsumoto and Takuji Nishimura,
-   All rights reserved.                          
+   All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
@@ -284,8 +284,8 @@
         notice, this list of conditions and the following disclaimer in the
         documentation and/or other materials provided with the distribution.
 
-     3. The names of its contributors may not be used to endorse or promote 
-        products derived from this software without specific prior written 
+     3. The names of its contributors may not be used to endorse or promote
+        products derived from this software without specific prior written
         permission.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -306,7 +306,7 @@
    email: m-mat @ math.sci.hiroshima-u.ac.jp (remove space)
 */
 
-/* Period parameters */  
+/* Period parameters */
 #define N 624
 #define M 397
 #define MATRIX_A 0x9908b0dfUL   /* constant vector a */
@@ -326,7 +326,7 @@ static void init_genrand()
 #endif
 	mt[0]= s & 0xffffffffUL;
 	for (mti=1; mti<N; mti++) {
-		mt[mti] = (1812433253UL * (mt[mti-1] ^ (mt[mti-1] >> 30)) + mti); 
+		mt[mti] = (1812433253UL * (mt[mti-1] ^ (mt[mti-1] >> 30)) + mti);
 		/* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
 		/* In the previous versions, MSBs of the seed affect   */
 		/* only MSBs of the array mt[].                        */
@@ -359,7 +359,7 @@ static inline uint32_t genrand_int32()
 
 		mti = 0;
 	}
-  
+
 	y = mt[mti++];
 
 	/* Tempering */
@@ -428,7 +428,7 @@ struct Cell
 	/* Counter for original lineages -- equal to the cell ID of
 	* the first cell in the line. */
 	uint64_t lineage;
-  
+
 	/* Generations start at 0 and are incremented from there. */
 	uint64_t generation;
 
@@ -455,7 +455,7 @@ struct PerReportStatCounters
 	/* Counts for the number of times each instruction was
 	* executed since the last report. */
 	double instructionExecutions[16];
-  
+
 	/* Number of cells executed since last report */
 	double cellExecutions;
 
@@ -481,14 +481,14 @@ struct PerReportStatCounters statCounters;
 static void doReport(const uint64_t clock)
 {
 	static uint64_t lastTotalViableReplicators = 0;
-  
+
 	uint64_t x,y;
-  
+
 	uint64_t totalActiveCells = 0;
 	uint64_t totalEnergy = 0;
 	uint64_t totalViableReplicators = 0;
 	uint64_t maxGeneration = 0;
-  
+
 	for(x=0;x<POND_SIZE_X;++x) {
 		for(y=0;y<POND_SIZE_Y;++y) {
 			struct Cell *const c = &pond[x][y];
@@ -504,9 +504,9 @@ static void doReport(const uint64_t clock)
 			}
 		}
 	}
-  
+
 	/* Look here to get the columns in the CSV output */
-  
+
 	/* The first five are here and are self-explanatory */
 	printf(							\
 		"%" PRIu64 "," /* clock */				\
@@ -526,7 +526,7 @@ static void doReport(const uint64_t clock)
 		statCounters.viableCellsKilled,
 		statCounters.viableCellShares
 	);
-  
+
 	/* The next 16 are the average frequencies of execution for each
 	* instruction per cell execution. */
 	double totalMetabolism = 0.0;
@@ -534,20 +534,20 @@ static void doReport(const uint64_t clock)
 		totalMetabolism += statCounters.instructionExecutions[x];
 		printf(",%.4f",(statCounters.cellExecutions > 0.0) ? (statCounters.instructionExecutions[x] / statCounters.cellExecutions) : 0.0);
 	}
-  
+
 	/* The last column is the average metabolism per cell execution */
 	printf(",%.4f\n",(statCounters.cellExecutions > 0.0) ? (totalMetabolism / statCounters.cellExecutions) : 0.0);
 	fflush(stdout);
-  
+
 	if ((lastTotalViableReplicators > 0)&&(totalViableReplicators == 0)){
 		fprintf(stderr,"[EVENT] Viable replicators have gone extinct. Please reserve a moment of silence.\n");
 	}
 	else if ((lastTotalViableReplicators == 0)&&(totalViableReplicators > 0)){
 		fprintf(stderr,"[EVENT] Viable replicators have appeared!\n");
 	}
-  
+
 	lastTotalViableReplicators = totalViableReplicators;
-  
+
 	/* Reset per-report stat counters */
 	for(x=0;x<sizeof(statCounters);++x){
 		((uint8_t *)&statCounters)[x] = (uint8_t)0;
@@ -567,16 +567,16 @@ static void doDump(const uint64_t clock)
 	FILE *d;
 	uint64_t x,y,wordPtr,shiftPtr,inst,stopCount,i;
 	struct Cell *cell;
-  
+
 	sprintf(buf,"%" PRIu64 ".dump.csv",clock);
 	d = fopen(buf,"w");
 	if (!d) {
 		fprintf(stderr,"[WARNING] Could not open %s for writing.\n",buf);
 		return;
 	}
-  
+
 	fprintf(stderr,"[INFO] Dumping viable cells to %s\n",buf);
-  
+
 	for(x=0;x<POND_SIZE_X;++x) {
 		for(y=0;y<POND_SIZE_Y;++y) {
 			cell = &pond[x][y];
@@ -660,7 +660,7 @@ static void dumpCell(FILE *file, struct Cell *cell)
 	}
 	fprintf(file,"\n");
 }
-  
+
 /**
  * Get a neighbor in the pond
  *
@@ -776,10 +776,10 @@ static inline uint8_t getColor(struct Cell *c)
 int main(int argc,char **argv)
 {
 	uint64_t i,x,y;
-  
+
 	/* Buffer used for execution output of candidate offspring */
 	uint64_t outputBuf[POND_DEPTH_SYSWORDS];
-  
+
 	/* Seed and init the random number generator */
 	init_genrand();
 	for(i=0;i<1024;++i){
@@ -790,7 +790,7 @@ int main(int argc,char **argv)
 	for(x=0;x<sizeof(statCounters);++x){
 		((uint8_t *)&statCounters)[x] = (uint8_t)0;
 	}
-  
+
 	/* Set up SDL if we're using it */
 #ifdef USE_SDL
 	SDL_Surface *screen;
@@ -808,7 +808,7 @@ int main(int argc,char **argv)
 	}
 	const uint64_t sdlPitch = screen->pitch;
 #endif /* USE_SDL */
- 
+
   /* Clear the pond and initialize all genomes to 0xffff... */
 	for(x=0;x<POND_SIZE_X;++x) {
 		for(y=0;y<POND_SIZE_Y;++y) {
@@ -822,42 +822,42 @@ int main(int argc,char **argv)
 			}
 		}
 	}
-  
+
 	/* Clock is incremented on each core loop */
 	uint64_t clock = 0;
-  
+
 	/* This is used to generate unique cell IDs */
 	uint64_t cellIdCounter = 0;
-  
+
 	/* Miscellaneous variables used in the loop */
 	uint64_t currentWord,wordPtr,shiftPtr,inst,tmp;
 	struct Cell *cell,*tmcell;
-  
+
 	/* Virtual machine memory pointer register (which
 	* exists in two parts... read the code below...) */
 	uint64_t ptr_wordPtr;
 	uint64_t ptr_shiftPtr;
-  
+
 	/* The main "register" */
 	uint64_t reg;
-  
+
 	/* Which way is the cell facing? */
 	uint64_t facing;
-  
+
 	/* Virtual machine loop/rep stack */
 	uint64_t loopStack_wordPtr[POND_DEPTH];
 	uint64_t loopStack_shiftPtr[POND_DEPTH];
 	uint64_t loopStackPtr;
-  
+
 	/* If this is nonzero, we're skipping to matching REP */
 	/* It is incremented to track the depth of a nested set
 	* of LOOP/REP pairs in false state. */
 	uint64_t falseLoopDepth;
-  
+
 	/* If this is nonzero, cell execution stops. This allows us
 	* to avoid the ugly use of a goto to exit the loop. :) */
 	int stop;
-  
+
 	/* Main loop */
 	for(;;) {
 		/* Stop at STOP_AT if defined */
@@ -881,7 +881,7 @@ int main(int argc,char **argv)
 			doReport(clock);
 		}
 #endif
-      
+
 #ifdef USE_SDL
 		/* Refresh the screen and check for input if SDL enabled */
 		if (!(clock % SDL_REFRESH_FREQUENCY)){
@@ -938,7 +938,7 @@ int main(int argc,char **argv)
 				cell->genome[i] = getRandom();
 			}
 			++cellIdCounter;
-      
+
 #ifdef USE_SDL
 			/* Update the random cell on SDL screen if viz is enabled */
 			if (SDL_MUSTLOCK(screen)){
@@ -950,7 +950,7 @@ int main(int argc,char **argv)
 			}
 #endif /* USE_SDL */
 		}
-    
+
 		/* Pick a random cell to execute */
 		x = getRandom() % POND_SIZE_X;
 		y = getRandom() % POND_SIZE_Y;
@@ -977,7 +977,7 @@ int main(int argc,char **argv)
 		 * whenever it might have changed... take a look at
 		 * the code. :) */
 		currentWord = cell->genome[0];
-    
+
 		/* Keep track of how many cells have been executed */
 		statCounters.cellExecutions += 1.0;
 
@@ -985,7 +985,7 @@ int main(int argc,char **argv)
 		while (cell->energy&&(!stop)) {
 			/* Get the next instruction */
 			inst = (currentWord >> shiftPtr) & 0xf;
-      
+
 			/* Randomly frob either the instruction or the register with a
 			* probability defined by MUTATION_RATE. This introduces variation,
 			* and since the variation is introduced into the state of the VM
@@ -1000,10 +1000,10 @@ int main(int argc,char **argv)
 					reg = tmp & 0xf;
 				}
 			}
-      
+
 			/* Each instruction processed costs one unit of energy */
 			--cell->energy;
-      
+
 			/* Execute the instruction */
 			if (falseLoopDepth) {
 				/* Skip forward to matching REP if we're in a false loop. */
@@ -1016,10 +1016,10 @@ int main(int argc,char **argv)
 				}
 			} else {
 				/* If we're not in a false LOOP/REP, execute normally */
-        
+
 				/* Keep track of execution frequencies for each instruction */
 				statCounters.instructionExecutions[inst] += 1.0;
-        
+
 				switch(inst) {
 					case 0x0: /* ZERO: Zero VM state registers */
 						reg = 0;
@@ -1130,8 +1130,8 @@ int main(int argc,char **argv)
 							tmp = cell->energy / FAILED_KILL_PENALTY;
 							if (cell->energy > tmp){
 								cell->energy -= tmp;
-							} else { 
-								cell->energy = 0; 
+							} else {
+								cell->energy = 0;
 							}
             					}
 						break;
@@ -1152,20 +1152,20 @@ int main(int argc,char **argv)
 						break;
 				}
 			}
-      
+
 			/* Advance the shift and word pointers, and loop around
 			* to the beginning at the end of the genome. */
 			if ((shiftPtr += 4) >= SYSWORD_BITS) {
 				if (++wordPtr >= POND_DEPTH_SYSWORDS) {
 					wordPtr = EXEC_START_WORD;
 					shiftPtr = EXEC_START_BIT;
-				} else { 
-					shiftPtr = 0; 
+				} else {
+					shiftPtr = 0;
 				}
 				currentWord = cell->genome[wordPtr];
 			}
 		}
-    
+
 		/* Copy outputBuf into neighbor if access is permitted and there
 		* is energy there to make something happen. There is no need
 		* to copy to a cell with no energy, since anything copied there
@@ -1178,7 +1178,7 @@ int main(int argc,char **argv)
 				if (tmcell->generation > 2) {
 					++statCounters.viableCellsReplaced;
 				}
-        
+
 				tmcell->ID = ++cellIdCounter;
 				tmcell->parentID = cell->ID;
 				tmcell->lineage = cell->lineage; /* Lineage is copied in offspring */
@@ -1210,7 +1210,7 @@ int main(int argc,char **argv)
 			((uint8_t *)screen->pixels)[x + ((y-1) * sdlPitch)] = getColor(&pond[x][y-1]);
 			if (y < (POND_SIZE_Y-1)){
 				((uint8_t *)screen->pixels)[x + ((y+1) * sdlPitch)] = getColor(&pond[x][y+1]);
-			} else { 
+			} else {
 				((uint8_t *)screen->pixels)[x] = getColor(&pond[x][0]);
 			}
 		} else {
@@ -1222,7 +1222,7 @@ int main(int argc,char **argv)
 		}
 #endif /* USE_SDL */
 	}
-  
+
 	exit(0);
 	return 0; /* Make compiler shut up */
 }
